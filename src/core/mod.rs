@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    env,
+    sync::{Arc, Mutex},
+};
 
 use anyhow::{Result, bail};
 use wasmtime::{
@@ -46,7 +49,8 @@ impl Core {
         };
         let mut store = Store::new(&engine, state);
 
-        let file = "/Users/stuartharris/src/redbadger/crux/examples/counter-next/target/wasm32-wasip2/debug/shared.wasm";
+        let file = "../crux/examples/counter-next/target/wasm32-wasip2/debug/shared.wasm";
+        let file = env::current_dir()?.join(file);
         let component = Component::from_file(&engine, file)?;
         let instance = linker.instantiate(&mut store, &component)?;
 
