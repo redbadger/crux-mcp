@@ -1,0 +1,21 @@
+[package]
+name = "crux-mcp"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+async-trait = "0.1.88"
+crux_core = { path = "../crux/crux_core" }
+rust-mcp-sdk = { version = "0.5.0", features = [
+  "server",
+  "macros",
+  "hyper-server",
+  "ssl",
+  "2025_03_26",
+] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+tokio = { version = "1.46.1", features = ["full"] }
+wasmtime = "34.0.1"
+wasmtime-wasi = "34.0.1"
