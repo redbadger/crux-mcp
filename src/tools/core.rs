@@ -1,8 +1,13 @@
 use rust_mcp_sdk::macros::{JsonSchema, mcp_tool};
 use rust_mcp_sdk::schema::{CallToolResult, schema_utils::CallToolError};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::core::Core;
+
+#[derive(Error, Debug)]
+#[error(transparent)]
+struct Error(#[from] anyhow::Error);
 
 #[mcp_tool(
     name = "core",
@@ -18,9 +23,7 @@ pub struct CruxCoreTool {}
 impl CruxCoreTool {
     #[allow(clippy::unnecessary_wraps, clippy::unused_self)]
     pub fn call_tool(&self, context: &Core) -> Result<CallToolResult, CallToolError> {
-        let view = context.view();
-        Ok(CallToolResult::text_content(vec![
-            format!("{view:?}").into(),
-        ]))
+        let view = context.view().map_err(|e| CallToolError::new(Error(e)))?;
+        Ok(CallToolResult::text_content(vec![view.into()]))
     }
 }

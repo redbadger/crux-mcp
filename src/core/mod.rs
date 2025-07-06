@@ -64,7 +64,7 @@ impl Core {
         Ok(())
     }
 
-    pub fn view(&self) -> Result<Vec<u8>> {
+    pub fn view(&self) -> Result<String> {
         let Some(view) = &self.view else {
             bail!("no view function");
         };
@@ -76,6 +76,8 @@ impl Core {
 
         let (data,) = view.call(&mut store, ())?;
         view.post_return(&mut store)?;
+
+        let data = String::from_utf8(data)?;
 
         Ok(data)
     }
