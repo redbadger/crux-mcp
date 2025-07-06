@@ -22,5 +22,6 @@ To run the MCP server:
 
 ```bash
 cargo build
+export CRUX_COMPONENT=/path/to/crux/examples/counter-next/target/wasm32-wasip2/debug/shared.wasm
 pnpx @modelcontextprotocol/inspector ./target/debug/crux-mcp
 ```

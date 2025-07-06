@@ -1,5 +1,6 @@
 use std::{
     env,
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 
@@ -50,8 +51,7 @@ impl Core {
         };
         let mut store = Store::new(&engine, state);
 
-        let file = "../crux/examples/counter-next/target/wasm32-wasip2/debug/shared.wasm";
-        let file = env::current_dir()?.join(file);
+        let file = PathBuf::from(env::var("CRUX_COMPONENT")?);
         let component = Component::from_file(&engine, file)?;
         let instance = linker.instantiate(&mut store, &component)?;
 
