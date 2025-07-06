@@ -6,7 +6,10 @@ use rust_mcp_sdk::schema::{
 use rust_mcp_sdk::{McpServer, mcp_server::ServerHandler};
 
 use crate::core::Core;
-use crate::tools::MyTools;
+use crate::tools::{
+    MyTools,
+    core::{Resolve, Update, View},
+};
 
 // Custom Handler to handle MCP Messages
 pub struct MyServerHandler {
@@ -46,13 +49,13 @@ impl ServerHandler for MyServerHandler {
         request: CallToolRequest,
         _runtime: &dyn McpServer,
     ) -> std::result::Result<CallToolResult, CallToolError> {
-        // Attempt to convert request parameters into GreetingTools enum
-        let tool_params: MyTools = MyTools::try_from(request.params).map_err(CallToolError::new)?;
+        let params = MyTools::try_from(request.params).map_err(CallToolError::new)?;
 
-        // Match the tool variant and execute its corresponding logic
-        match tool_params {
+        match params {
             MyTools::SayHelloTool(say_hello_tool) => say_hello_tool.call_tool(),
-            MyTools::CruxCoreTool(crux_core_tool) => crux_core_tool.call_tool(&self.core),
+            MyTools::Update(params) => Update::call_tool(params, &self.core),
+            MyTools::Resolve(params) => Resolve::call_tool(params, &self.core),
+            MyTools::View(_) => View::call_tool(&self.core),
         }
     }
 }

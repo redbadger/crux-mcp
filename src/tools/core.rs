@@ -10,20 +10,71 @@ use crate::core::Core;
 struct Error(#[from] anyhow::Error);
 
 #[mcp_tool(
-    name = "core",
-    description = "Exposes a Crux app as a core, with a single view function",
+    name = "update",
+    description = "Calls the update function in a Crux app",
     idempotent_hint = false,
     destructive_hint = false,
     open_world_hint = false,
     read_only_hint = false
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
-pub struct CruxCoreTool {}
+pub struct Update {
+    data: String,
+}
 
-impl CruxCoreTool {
-    #[allow(clippy::unnecessary_wraps, clippy::unused_self)]
-    pub fn call_tool(&self, context: &Core) -> Result<CallToolResult, CallToolError> {
+impl Update {
+    #[allow(clippy::unnecessary_wraps)]
+    pub fn call_tool(params: Self, context: &Core) -> Result<CallToolResult, CallToolError> {
+        let update = context
+            .update(params.data.into_bytes())
+            .map_err(|e| CallToolError::new(Error(e)))?;
+        let update = String::from_utf8(update).map_err(|e| CallToolError::new(Error(e.into())))?;
+        Ok(CallToolResult::text_content(vec![update.into()]))
+    }
+}
+
+#[mcp_tool(
+    name = "resolve",
+    description = "Calls the resolve function in a Crux app",
+    idempotent_hint = false,
+    destructive_hint = false,
+    open_world_hint = false,
+    read_only_hint = false
+)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct Resolve {
+    effect_id: u32,
+    data: String,
+}
+
+impl Resolve {
+    #[allow(clippy::unnecessary_wraps)]
+    pub fn call_tool(params: Self, context: &Core) -> Result<CallToolResult, CallToolError> {
+        let resolve = context
+            .resolve(params.effect_id, params.data.into_bytes())
+            .map_err(|e| CallToolError::new(Error(e)))?;
+        let resolve =
+            String::from_utf8(resolve).map_err(|e| CallToolError::new(Error(e.into())))?;
+        Ok(CallToolResult::text_content(vec![resolve.into()]))
+    }
+}
+
+#[mcp_tool(
+    name = "view",
+    description = "Gets the ViewModel by calling the view function in a Crux app",
+    idempotent_hint = false,
+    destructive_hint = false,
+    open_world_hint = false,
+    read_only_hint = true
+)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct View {}
+
+impl View {
+    #[allow(clippy::unnecessary_wraps)]
+    pub fn call_tool(context: &Core) -> Result<CallToolResult, CallToolError> {
         let view = context.view().map_err(|e| CallToolError::new(Error(e)))?;
+        let view = String::from_utf8(view).map_err(|e| CallToolError::new(Error(e.into())))?;
         Ok(CallToolResult::text_content(vec![view.into()]))
     }
 }
