@@ -6,8 +6,6 @@ Loads a Crux application's shared library as a WebAssembly Component, exposing i
 
 ## Prerequisites
 
-Currently hardcoded to a `wasm32-wasip2` build of the `crux-counter`.
-
 Checkout the branch from [this pull request](https://github.com/redbadger/crux/pull/401) into a directory called "crux", alongside this repository.
 
 ```bash
