@@ -33,6 +33,7 @@ type Bytes = Vec<u8>;
 #[derive(Default)]
 pub struct Core {
     store: Arc<Mutex<Option<Store<ComponentRunStates>>>>,
+    schema: Option<TypedFunc<(), (String,)>>,
     update: Option<TypedFunc<(Bytes,), (Bytes,)>>,
     resolve: Option<TypedFunc<(u32, Bytes), (Bytes,)>>,
     view: Option<TypedFunc<(), (Bytes,)>>,
@@ -55,6 +56,12 @@ impl Core {
         let component = Component::from_file(&engine, file)?;
         let instance = linker.instantiate(&mut store, &component)?;
 
+        if let Some(func) = instance.get_func(&mut store, "schema") {
+            self.schema = Some(func.typed::<(), (String,)>(&store)?);
+        } else {
+            bail!("schema function not found");
+        }
+
         if let Some(func) = instance.get_func(&mut store, "update") {
             self.update = Some(func.typed::<(Bytes,), (Bytes,)>(&store)?);
         } else {
@@ -76,6 +83,22 @@ impl Core {
         self.store = Arc::new(Mutex::new(Some(store)));
 
         Ok(())
+    }
+
+    pub fn schema(&self) -> Result<String> {
+        let Some(schema) = self.schema else {
+            bail!("no schema function");
+        };
+
+        let mut store = self.store.lock().expect("failed to lock store");
+        let Some(mut store) = store.as_mut() else {
+            bail!("no store");
+        };
+
+        let (data,) = schema.call(&mut store, ())?;
+        schema.post_return(&mut store)?;
+
+        Ok(data)
     }
 
     pub fn update(&self, data: Vec<u8>) -> Result<Vec<u8>> {

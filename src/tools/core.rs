@@ -10,6 +10,24 @@ use crate::core::Core;
 struct Error(#[from] anyhow::Error);
 
 #[mcp_tool(
+    name = "schema",
+    description = "Gets the schema of a Crux app",
+    idempotent_hint = false,
+    destructive_hint = false,
+    open_world_hint = false,
+    read_only_hint = false
+)]
+#[derive(Debug, Deserialize, Serialize, JsonSchema)]
+pub struct Schema {}
+
+impl Schema {
+    pub fn call_tool(context: &Core) -> Result<CallToolResult, CallToolError> {
+        let schema = context.schema().map_err(|e| CallToolError::new(Error(e)))?;
+        Ok(CallToolResult::text_content(vec![schema.into()]))
+    }
+}
+
+#[mcp_tool(
     name = "update",
     description = "Calls the update function in a Crux app",
     idempotent_hint = false,
@@ -23,10 +41,9 @@ pub struct Update {
 }
 
 impl Update {
-    #[allow(clippy::unnecessary_wraps)]
-    pub fn call_tool(params: Self, context: &Core) -> Result<CallToolResult, CallToolError> {
+    pub fn call_tool(self, context: &Core) -> Result<CallToolResult, CallToolError> {
         let update = context
-            .update(params.data.into_bytes())
+            .update(self.data.into_bytes())
             .map_err(|e| CallToolError::new(Error(e)))?;
         let update = String::from_utf8(update).map_err(|e| CallToolError::new(Error(e.into())))?;
         Ok(CallToolResult::text_content(vec![update.into()]))
@@ -48,10 +65,9 @@ pub struct Resolve {
 }
 
 impl Resolve {
-    #[allow(clippy::unnecessary_wraps)]
-    pub fn call_tool(params: Self, context: &Core) -> Result<CallToolResult, CallToolError> {
+    pub fn call_tool(self, context: &Core) -> Result<CallToolResult, CallToolError> {
         let resolve = context
-            .resolve(params.effect_id, params.data.into_bytes())
+            .resolve(self.effect_id, self.data.into_bytes())
             .map_err(|e| CallToolError::new(Error(e)))?;
         let resolve =
             String::from_utf8(resolve).map_err(|e| CallToolError::new(Error(e.into())))?;
@@ -71,7 +87,6 @@ impl Resolve {
 pub struct View {}
 
 impl View {
-    #[allow(clippy::unnecessary_wraps)]
     pub fn call_tool(context: &Core) -> Result<CallToolResult, CallToolError> {
         let view = context.view().map_err(|e| CallToolError::new(Error(e)))?;
         let view = String::from_utf8(view).map_err(|e| CallToolError::new(Error(e.into())))?;

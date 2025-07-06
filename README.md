@@ -10,7 +10,7 @@ Checkout the branch from [this pull request](https://github.com/redbadger/crux/p
 
 ```bash
 pushd ../crux/examples/counter-next
-cargo build --package shared --target wasm32-wasip2
+cargo build --package shared --features facet_typegen --target wasm32-wasip2
 popd
 ```
 
