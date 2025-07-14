@@ -4,7 +4,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use anyhow::{Result, bail};
+use anyhow::{Result, anyhow, bail};
 use wasmtime::{
     Engine, Store,
     component::{Component, Linker, ResourceTable, TypedFunc},
@@ -31,12 +31,13 @@ impl WasiView for ComponentRunStates {
 type Bytes = Vec<u8>;
 
 #[derive(Default)]
+#[allow(clippy::type_complexity)]
 pub struct Core {
     store: Arc<Mutex<Option<Store<ComponentRunStates>>>>,
     schema: Option<TypedFunc<(), (String,)>>,
-    update: Option<TypedFunc<(Bytes,), (Bytes,)>>,
-    resolve: Option<TypedFunc<(u32, Bytes), (Bytes,)>>,
-    view: Option<TypedFunc<(), (Bytes,)>>,
+    update: Option<TypedFunc<(Bytes,), (Result<Bytes, String>,)>>,
+    resolve: Option<TypedFunc<(u32, Bytes), (Result<Bytes, String>,)>>,
+    view: Option<TypedFunc<(), (Result<Bytes, String>,)>>,
 }
 
 impl Core {
@@ -63,19 +64,19 @@ impl Core {
         }
 
         if let Some(func) = instance.get_func(&mut store, "update") {
-            self.update = Some(func.typed::<(Bytes,), (Bytes,)>(&store)?);
+            self.update = Some(func.typed::<(Bytes,), (Result<Bytes, String>,)>(&store)?);
         } else {
             bail!("update function not found");
         }
 
         if let Some(func) = instance.get_func(&mut store, "resolve") {
-            self.resolve = Some(func.typed::<(u32, Bytes), (Bytes,)>(&store)?);
+            self.resolve = Some(func.typed::<(u32, Bytes), (Result<Bytes, String>,)>(&store)?);
         } else {
             bail!("resolve function not found");
         }
 
         if let Some(func) = instance.get_func(&mut store, "view") {
-            self.view = Some(func.typed::<(), (Bytes,)>(&store)?);
+            self.view = Some(func.typed::<(), (Result<Bytes, String>,)>(&store)?);
         } else {
             bail!("view function not found");
         }
@@ -114,7 +115,7 @@ impl Core {
         let (data,) = update.call(&mut store, (data,))?;
         update.post_return(&mut store)?;
 
-        Ok(data)
+        data.map_err(|e| anyhow!("bridge error: {e}"))
     }
 
     pub fn resolve(&self, effect_id: u32, data: Vec<u8>) -> Result<Vec<u8>> {
@@ -130,7 +131,7 @@ impl Core {
         let (data,) = resolve.call(&mut store, (effect_id, data))?;
         resolve.post_return(&mut store)?;
 
-        Ok(data)
+        data.map_err(|e| anyhow!("bridge error: {e}"))
     }
 
     pub fn view(&self) -> Result<Vec<u8>> {
@@ -146,6 +147,6 @@ impl Core {
         let (data,) = view.call(&mut store, ())?;
         view.post_return(&mut store)?;
 
-        Ok(data)
+        data.map_err(|e| anyhow!("bridge error: {e}"))
     }
 }

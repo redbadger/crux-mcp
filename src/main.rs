@@ -16,7 +16,7 @@ use rust_mcp_sdk::{
 async fn main() -> SdkResult<()> {
     let server_details = InitializeResult {
         server_info: Implementation {
-            name: "Hello World MCP Server".to_string(),
+            name: "Crux app MCP Server".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             title: None,
         },
