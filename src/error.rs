@@ -1,10 +1,9 @@
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Error, Debug, Serialize, Deserialize)]
-#[error("{0}")]
+#[derive(Error, Debug)]
 pub enum Error {
-    #[serde(skip)]
+    #[error("channel closed")]
+    ChannelClosed,
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

@@ -9,19 +9,18 @@ use rust_mcp_sdk::schema::{
 use rust_mcp_sdk::{McpServer, mcp_server::ServerHandler};
 use tokio::sync::mpsc;
 
-use crate::core::{self, Core, app::Event};
 use crate::error::Error;
-use crate::shell::{host::Host, mcp::MyTools};
+use crate::event_loop::Core;
+use crate::shell::mcp::MyTools;
 
 // Custom Handler to handle MCP Messages
 pub struct MyServerHandler {
     core: Core,
-    host: Host,
 }
 
 impl MyServerHandler {
-    pub fn new(core: Core, host: Host) -> Self {
-        Self { core, host }
+    pub fn new(core: Core) -> Self {
+        Self { core }
     }
 }
 
@@ -50,30 +49,20 @@ impl ServerHandler for MyServerHandler {
         request: CallToolRequest,
         _runtime: &dyn McpServer,
     ) -> Result<CallToolResult, CallToolError> {
-        let params = MyTools::try_from(request.params).map_err(CallToolError::new)?;
-        let core = &self.core;
-        let host = &self.host;
+        let params = MyTools::try_from(request.params)?;
         let (tx, mut rx) = mpsc::channel(1);
 
-        match params {
-            MyTools::Schema(params) => core::update(core, host, Event::Schema(params.into()), &tx),
-            MyTools::Update(params) => core::update(core, host, Event::Update(params.into()), &tx),
-            MyTools::Resolve(params) => {
-                core::update(core, host, Event::Resolve(params.into()), &tx);
-            }
-            MyTools::View(params) => core::update(core, host, Event::View(params.into()), &tx),
-        }
+        self.core.update(params.into(), &tx);
 
         match rx.recv().await {
             Some(result) => match result {
                 Ok(data) => {
-                    let data = String::from_utf8(data)
-                        .map_err(|e| CallToolError::new(Error::Other(e.into())))?;
-                    Ok(CallToolResult::text_content(vec![data.into()]))
+                    let text = String::from_utf8(data).map_err(CallToolError::new)?;
+                    Ok(CallToolResult::text_content(vec![text.into()]))
                 }
                 Err(e) => Err(CallToolError::new(Error::Other(anyhow!("{e}")))),
             },
-            None => Err(CallToolError::new(Error::Other(anyhow!("channel closed")))),
+            None => Err(CallToolError::new(Error::ChannelClosed)),
         }
     }
 }

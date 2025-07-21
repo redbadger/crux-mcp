@@ -8,10 +8,14 @@ use rust_mcp_sdk::{
     },
 };
 
-use crate::shell::{host::Host, mcp::handler::MyServerHandler};
+use crate::{
+    event_loop::Core,
+    shell::{host::Host, mcp::handler::MyServerHandler},
+};
 
 mod core;
 mod error;
+mod event_loop;
 mod shell;
 
 #[tokio::main]
@@ -31,14 +35,14 @@ async fn main() -> SdkResult<()> {
         protocol_version: LATEST_PROTOCOL_VERSION.to_string(),
     };
 
-    let core = core::new();
     let mut host = Host::default();
     host.load().expect("failed to load guest");
+    let core = Core::new(host);
 
     let server = server_runtime::create_server(
         server_details,
         StdioTransport::new(TransportOptions::default())?,
-        MyServerHandler::new(core, host),
+        MyServerHandler::new(core),
     );
 
     server.start().await
