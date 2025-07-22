@@ -1,13 +1,17 @@
+use std::result::Result;
+
+use anyhow::anyhow;
 use async_trait::async_trait;
 use rust_mcp_sdk::schema::{
     CallToolRequest, CallToolResult, ListToolsRequest, ListToolsResult, RpcError,
     schema_utils::CallToolError,
 };
 use rust_mcp_sdk::{McpServer, mcp_server::ServerHandler};
+use tokio::sync::mpsc;
 
-use crate::core::Core;
-use crate::tools::core::Schema;
-use crate::tools::{MyTools, core::View};
+use crate::Error;
+use crate::event_loop::Core;
+use crate::shell::mcp::MyTools;
 
 // Custom Handler to handle MCP Messages
 pub struct MyServerHandler {
@@ -15,9 +19,7 @@ pub struct MyServerHandler {
 }
 
 impl MyServerHandler {
-    pub fn new() -> Self {
-        let mut core = Core::default();
-        core.load().unwrap();
+    pub fn new(core: Core) -> Self {
         Self { core }
     }
 }
@@ -33,7 +35,7 @@ impl ServerHandler for MyServerHandler {
         &self,
         request: ListToolsRequest,
         runtime: &dyn McpServer,
-    ) -> std::result::Result<ListToolsResult, RpcError> {
+    ) -> Result<ListToolsResult, RpcError> {
         Ok(ListToolsResult {
             meta: None,
             next_cursor: None,
@@ -46,15 +48,21 @@ impl ServerHandler for MyServerHandler {
         &self,
         request: CallToolRequest,
         _runtime: &dyn McpServer,
-    ) -> std::result::Result<CallToolResult, CallToolError> {
-        let params = MyTools::try_from(request.params).map_err(CallToolError::new)?;
-        let core = &self.core;
+    ) -> Result<CallToolResult, CallToolError> {
+        let params = MyTools::try_from(request.params)?;
+        let (tx, mut rx) = mpsc::channel(1);
 
-        match params {
-            MyTools::Schema(_) => Schema::call_tool(core),
-            MyTools::Update(params) => params.call_tool(core),
-            MyTools::Resolve(params) => params.call_tool(core),
-            MyTools::View(_) => View::call_tool(core),
+        self.core.update(params.into(), &tx);
+
+        match rx.recv().await {
+            Some(result) => match result {
+                Ok(data) => {
+                    let text = String::from_utf8(data).map_err(CallToolError::new)?;
+                    Ok(CallToolResult::text_content(vec![text.into()]))
+                }
+                Err(e) => Err(CallToolError::new(Error::Other(anyhow!("{e}")))),
+            },
+            None => Err(CallToolError::new(Error::ChannelClosed)),
         }
     }
 }

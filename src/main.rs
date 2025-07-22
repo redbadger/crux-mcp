@@ -1,16 +1,24 @@
-mod core;
-mod handler;
-mod tools;
-
-use handler::MyServerHandler;
-use rust_mcp_sdk::schema::{
-    Implementation, InitializeResult, LATEST_PROTOCOL_VERSION, ServerCapabilities,
-    ServerCapabilitiesTools,
-};
-
 use rust_mcp_sdk::{
-    McpServer, StdioTransport, TransportOptions, error::SdkResult, mcp_server::server_runtime,
+    McpServer, StdioTransport, TransportOptions,
+    error::SdkResult,
+    mcp_server::server_runtime,
+    schema::{
+        Implementation, InitializeResult, LATEST_PROTOCOL_VERSION, ServerCapabilities,
+        ServerCapabilitiesTools,
+    },
 };
+
+use crate::{
+    event_loop::Core,
+    shell::{host::Host, mcp::handler::MyServerHandler},
+};
+
+mod core;
+mod error;
+mod event_loop;
+mod shell;
+
+pub use error::{Error, Result};
 
 #[tokio::main]
 async fn main() -> SdkResult<()> {
@@ -29,10 +37,14 @@ async fn main() -> SdkResult<()> {
         protocol_version: LATEST_PROTOCOL_VERSION.to_string(),
     };
 
+    let mut host = Host::default();
+    host.load().expect("failed to load guest");
+    let core = Core::new(host);
+
     let server = server_runtime::create_server(
         server_details,
         StdioTransport::new(TransportOptions::default())?,
-        MyServerHandler::new(),
+        MyServerHandler::new(core),
     );
 
     server.start().await
