@@ -55,9 +55,7 @@ impl crux_core::App for App {
         match event {
             Event::Schema(_) => get_schema().then_send(Event::GotSchema),
             Event::Update(request) => call_update(request.data).then_send(Event::GotUpdate),
-            Event::Resolve(request) => {
-                call_resolve(request.effect_id, request.data).then_send(Event::GotResolve)
-            }
+            Event::Resolve(request) => call_resolve(request).then_send(Event::GotResolve),
             Event::View(_) => call_view().then_send(Event::GotView),
             Event::GotSchema(SchemaResponse(result)) => {
                 render::render(result.map(String::into_bytes))

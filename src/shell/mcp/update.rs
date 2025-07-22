@@ -18,6 +18,8 @@ pub struct Update {
 
 impl From<Update> for UpdateRequest {
     fn from(update: Update) -> Self {
-        Self { data: update.data }
+        Self {
+            data: update.data.into_bytes(),
+        }
     }
 }

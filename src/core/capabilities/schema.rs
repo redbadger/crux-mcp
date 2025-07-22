@@ -1,11 +1,10 @@
 use crux_core::{Command, Request, capability::Operation, command::RequestBuilder};
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+use crate::Result;
+
 pub struct SchemaRequest;
 
-#[derive(Deserialize)]
-pub struct SchemaResponse(pub Result<String, String>);
+pub struct SchemaResponse(pub Result<String>);
 
 impl Operation for SchemaRequest {
     type Output = SchemaResponse;

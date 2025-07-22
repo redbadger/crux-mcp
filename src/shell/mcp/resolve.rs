@@ -21,7 +21,7 @@ impl From<Resolve> for ResolveRequest {
     fn from(resolve: Resolve) -> Self {
         ResolveRequest {
             effect_id: resolve.effect_id,
-            data: resolve.data,
+            data: resolve.data.into_bytes(),
         }
     }
 }

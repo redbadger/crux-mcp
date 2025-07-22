@@ -18,6 +18,8 @@ mod error;
 mod event_loop;
 mod shell;
 
+pub use error::{Error, Result};
+
 #[tokio::main]
 async fn main() -> SdkResult<()> {
     let server_details = InitializeResult {

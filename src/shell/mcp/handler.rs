@@ -9,7 +9,7 @@ use rust_mcp_sdk::schema::{
 use rust_mcp_sdk::{McpServer, mcp_server::ServerHandler};
 use tokio::sync::mpsc;
 
-use crate::error::Error;
+use crate::Error;
 use crate::event_loop::Core;
 use crate::shell::mcp::MyTools;
 

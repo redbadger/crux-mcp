@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.98"
 async-trait = "0.1.88"
-crux_core = "0.16.0-rc3"
+crux_core = { path = "../crux/crux_core" }
 rust-mcp-sdk = { version = "0.5.0", features = [
     "server",
     "macros",

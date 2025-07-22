@@ -1,10 +1,15 @@
 use tokio::sync::mpsc::Sender;
 
-use crate::core::capabilities::{
-    resolve::ResolveResponse, schema::SchemaResponse, update::UpdateResponse, view::ViewResponse,
-};
 use crate::{
-    core::app::{App, Effect, Event},
+    Error,
+    core::{
+        app::{App, Effect, Event},
+        capabilities::{
+            resolve::ResolveResponse, schema::SchemaResponse, update::UpdateResponse,
+            view::ViewResponse,
+        },
+    },
+    error::Result,
     shell::host::Host,
 };
 
@@ -21,26 +26,23 @@ impl Core {
         }
     }
 
-    pub fn update(&self, event: Event, tx: &Sender<Result<Vec<u8>, String>>) {
+    pub fn update(&self, event: Event, tx: &Sender<Result<Vec<u8>>>) {
         for effect in self.core.process_event(event) {
             self.process_effect(effect, tx);
         }
     }
 
-    fn process_effect(&self, effect: Effect, tx: &Sender<Result<Vec<u8>, String>>) {
+    fn process_effect(&self, effect: Effect, tx: &Sender<Result<Vec<u8>>>) {
         let effects = match effect {
             Effect::Schema(mut request) => {
-                let result = self.host.schema().map_err(|e| e.to_string());
+                let result = self.host.schema().map_err(Error::Other);
                 self.core
                     .resolve(&mut request, SchemaResponse(result))
                     .expect("should resolve")
             }
             Effect::Update(request) => {
                 let (request, mut handler) = request.split();
-                let result = self
-                    .host
-                    .update(request.data.into_bytes())
-                    .map_err(|e| e.to_string());
+                let result = self.host.update(request.data).map_err(Error::Other);
                 self.core
                     .resolve(&mut handler, UpdateResponse(result))
                     .expect("should resolve")
@@ -49,14 +51,14 @@ impl Core {
                 let (request, mut handler) = request.split();
                 let result = self
                     .host
-                    .resolve(request.effect_id, request.data.into_bytes())
-                    .map_err(|e| e.to_string());
+                    .resolve(request.effect_id, request.data)
+                    .map_err(Error::Other);
                 self.core
                     .resolve(&mut handler, ResolveResponse(result))
                     .expect("should resolve")
             }
             Effect::View(mut request) => {
-                let result = self.host.view().map_err(|e| e.to_string());
+                let result = self.host.view().map_err(Error::Other);
                 self.core
                     .resolve(&mut request, ViewResponse(result))
                     .expect("should resolve")

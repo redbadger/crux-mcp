@@ -1,26 +1,24 @@
 use crux_core::{Command, Request, capability::Operation, command::RequestBuilder};
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+use crate::Result;
+
 pub struct ResolveRequest {
     pub effect_id: u32,
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
-#[derive(Deserialize)]
-pub struct ResolveResponse(pub Result<Vec<u8>, String>);
+pub struct ResolveResponse(pub Result<Vec<u8>>);
 
 impl Operation for ResolveRequest {
     type Output = ResolveResponse;
 }
 
 pub fn call_resolve<Effect, Event>(
-    effect_id: u32,
-    data: String,
+    req: ResolveRequest,
 ) -> RequestBuilder<Effect, Event, impl Future<Output = ResolveResponse>>
 where
     Effect: From<Request<ResolveRequest>> + Send + 'static,
     Event: Send + 'static,
 {
-    Command::request_from_shell(ResolveRequest { effect_id, data })
+    Command::request_from_shell(req)
 }

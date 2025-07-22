@@ -1,21 +1,19 @@
 use crux_core::{Command, Request, capability::Operation, command::RequestBuilder};
-use rust_mcp_sdk::macros::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize, JsonSchema, PartialEq, Eq)]
+use crate::Result;
+
 pub struct UpdateRequest {
-    pub data: String,
+    pub data: Vec<u8>,
 }
 
-#[derive(Deserialize)]
-pub struct UpdateResponse(pub Result<Vec<u8>, String>);
+pub struct UpdateResponse(pub Result<Vec<u8>>);
 
 impl Operation for UpdateRequest {
     type Output = UpdateResponse;
 }
 
 pub fn call_update<Effect, Event>(
-    data: String,
+    data: Vec<u8>,
 ) -> RequestBuilder<Effect, Event, impl Future<Output = UpdateResponse>>
 where
     Effect: From<Request<UpdateRequest>> + Send + 'static,
