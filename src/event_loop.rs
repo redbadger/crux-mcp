@@ -1,3 +1,5 @@
+use std::string::String;
+
 use tokio::sync::mpsc::Sender;
 
 use crate::{
@@ -35,14 +37,18 @@ impl Core {
     fn process_effect(&self, effect: Effect, tx: &Sender<Result<Vec<u8>>>) {
         let effects = match effect {
             Effect::Schema(mut request) => {
-                let result = self.host.schema().map_err(Error::Other);
+                let result = self
+                    .host
+                    .schema()
+                    .map(String::into_bytes)
+                    .map_err(Error::Other);
                 self.core
                     .resolve(&mut request, SchemaResponse(result))
                     .expect("should resolve")
             }
             Effect::Update(request) => {
                 let (request, mut handler) = request.split();
-                let result = self.host.update(request.data).map_err(Error::Other);
+                let result = self.host.update(&request.data).map_err(Error::Other);
                 self.core
                     .resolve(&mut handler, UpdateResponse(result))
                     .expect("should resolve")
@@ -51,7 +57,7 @@ impl Core {
                 let (request, mut handler) = request.split();
                 let result = self
                     .host
-                    .resolve(request.effect_id, request.data)
+                    .resolve(request.effect_id, &request.data)
                     .map_err(Error::Other);
                 self.core
                     .resolve(&mut handler, ResolveResponse(result))
