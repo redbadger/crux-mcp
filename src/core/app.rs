@@ -1,5 +1,3 @@
-use std::string::String;
-
 use crux_core::{Command, macros::effect};
 
 use crate::core::capabilities::{
@@ -57,10 +55,8 @@ impl crux_core::App for App {
             Event::Update(request) => call_update(request.data).then_send(Event::GotUpdate),
             Event::Resolve(request) => call_resolve(request).then_send(Event::GotResolve),
             Event::View(_) => call_view().then_send(Event::GotView),
-            Event::GotSchema(SchemaResponse(result)) => {
-                render::render(result.map(String::into_bytes))
-            }
-            Event::GotUpdate(UpdateResponse(result))
+            Event::GotSchema(SchemaResponse(result))
+            | Event::GotUpdate(UpdateResponse(result))
             | Event::GotResolve(ResolveResponse(result))
             | Event::GotView(ViewResponse(result)) => render::render(result),
         }
