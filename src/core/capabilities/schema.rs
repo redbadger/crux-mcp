@@ -4,7 +4,7 @@ use crate::Result;
 
 pub struct SchemaRequest;
 
-pub struct SchemaResponse(pub Result<String>);
+pub struct SchemaResponse(pub Result<Vec<u8>>);
 
 impl Operation for SchemaRequest {
     type Output = SchemaResponse;
