@@ -13,10 +13,10 @@ pub struct Model;
 
 pub enum Event {
     // from shell
-    Schema(SchemaRequest),
+    GetSchema(SchemaRequest),
     Update(UpdateRequest),
     Resolve(ResolveRequest),
-    View(ViewRequest),
+    GetView(ViewRequest),
 
     // internal
     GotSchema(SchemaResponse),
@@ -41,20 +41,14 @@ impl crux_core::App for App {
     type Model = Model;
     type Event = Event;
     type ViewModel = ();
-    type Capabilities = ();
     type Effect = Effect;
 
-    fn update(
-        &self,
-        event: Self::Event,
-        _model: &mut Self::Model,
-        _caps: &Self::Capabilities,
-    ) -> Command<Effect, Event> {
+    fn update(&self, event: Self::Event, _model: &mut Self::Model) -> Command<Effect, Event> {
         match event {
-            Event::Schema(_) => get_schema().then_send(Event::GotSchema),
+            Event::GetSchema(_) => get_schema().then_send(Event::GotSchema),
             Event::Update(request) => call_update(request.data).then_send(Event::GotUpdate),
             Event::Resolve(request) => call_resolve(request).then_send(Event::GotResolve),
-            Event::View(_) => call_view().then_send(Event::GotView),
+            Event::GetView(_) => call_view().then_send(Event::GotView),
             Event::GotSchema(SchemaResponse(result))
             | Event::GotUpdate(UpdateResponse(result))
             | Event::GotResolve(ResolveResponse(result))

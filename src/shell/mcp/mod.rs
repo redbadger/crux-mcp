@@ -16,10 +16,10 @@ rust_mcp_sdk::tool_box!(MyTools, [Schema, Update, Resolve, View]);
 impl From<MyTools> for Event {
     fn from(tool: MyTools) -> Self {
         match tool {
-            MyTools::Schema(params) => Event::Schema(params.into()),
+            MyTools::Schema(params) => Event::GetSchema(params.into()),
             MyTools::Update(params) => Event::Update(params.into()),
             MyTools::Resolve(params) => Event::Resolve(params.into()),
-            MyTools::View(params) => Event::View(params.into()),
+            MyTools::View(params) => Event::GetView(params.into()),
         }
     }
 }

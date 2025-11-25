@@ -1,4 +1,5 @@
 use std::result::Result;
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -28,13 +29,12 @@ impl MyServerHandler {
 // https://github.com/rust-mcp-stack/rust-mcp-sdk/blob/main/crates/rust-mcp-sdk/src/mcp_handlers/mcp_server_handler.rs
 
 #[async_trait]
-#[allow(unused)]
 impl ServerHandler for MyServerHandler {
-    // Handle ListToolsRequest, return list of available tools as ListToolsResult
+    // Handle `ListToolsRequest`, return list of available tools as ListToolsResult
     async fn handle_list_tools_request(
         &self,
-        request: ListToolsRequest,
-        runtime: &dyn McpServer,
+        _request: ListToolsRequest,
+        _runtime: Arc<dyn McpServer>,
     ) -> Result<ListToolsResult, RpcError> {
         Ok(ListToolsResult {
             meta: None,
@@ -43,11 +43,11 @@ impl ServerHandler for MyServerHandler {
         })
     }
 
-    /// Handles incoming CallToolRequest and processes it using the appropriate tool.
+    /// Handles incoming `CallToolRequest` and processes it using the appropriate tool.
     async fn handle_call_tool_request(
         &self,
         request: CallToolRequest,
-        _runtime: &dyn McpServer,
+        _runtime: Arc<dyn McpServer>,
     ) -> Result<CallToolResult, CallToolError> {
         let params = MyTools::try_from(request.params)?;
         let (tx, mut rx) = mpsc::channel(1);
